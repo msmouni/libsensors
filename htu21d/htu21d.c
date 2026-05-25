@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define HTU21D_I2C_ADDR 0x40
-
 #define TRIGGER_TEMP_HOLD 0xE3
 #define TRIGGER_HUMID_HOLD 0xE5
 

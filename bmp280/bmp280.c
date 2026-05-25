@@ -3,8 +3,6 @@
 #include <stdbool.h>
 #include "stdlib.h"
 
-#define BMP280_ADDR 0x76
-
 // BMP280 registers
 #define REG_CALIB 0x88
 #define REG_CTRL_MEAS 0xF4
@@ -19,8 +17,9 @@ bmp280_read_calibration(const i2c_osal_t *i2c_handler, bmp280_calib_data *calib)
     if (i2c_handler == NULL || calib == NULL)
         return -1;
 
+    uint8_t calib_reg = REG_CALIB;
     uint8_t calib_data[24];
-    if (i2c_handler->write_read(i2c_handler->ctx, BMP280_ADDR, REG_CALIB, 1, calib_data, 24) < 0)
+    if (i2c_handler->write_read(i2c_handler->ctx, BMP280_I2C_ADDR, &calib_reg, 1, calib_data, 24) < 0)
         return -1;
 
     calib->dig_T1 = (calib_data[1] << 8) | calib_data[0];
@@ -51,7 +50,7 @@ int bmp280_init(bmp280_t *self, const i2c_osal_t *i2c_handler)
 
     // Configure BMP280: Normal mode, temperature + pressure, oversampling x1, and standby time 0.5ms
     uint8_t config[2] = {REG_CTRL_MEAS, 0x27}; // 0x27 = 00100111b (normal mode, temp+press oversampling x1)
-    if (i2c_handler->write(i2c_handler->ctx, BMP280_ADDR, config, 2) < 0)
+    if (i2c_handler->write(i2c_handler->ctx, BMP280_I2C_ADDR, config, 2) < 0)
         return -1;
 
     i2c_handler->delay_ms(i2c_handler->ctx, 10);
@@ -71,7 +70,8 @@ int bmp280_get_measurement(bmp280_t *self,
     uint8_t data[6];
 
     // Read 6 bytes: 3 bytes for pressure and 3 bytes for temperature
-    if (self->i2c_handler->write_read(self->i2c_handler->ctx, BMP280_ADDR, REG_PRESS_MSB, 1, data, 6) != 0)
+    uint8_t press_reg = REG_PRESS_MSB;
+    if (self->i2c_handler->write_read(self->i2c_handler->ctx, BMP280_I2C_ADDR, &press_reg, 1, data, 6) != 0)
     {
         *temperature = 0;
         *pressure = 0;

@@ -4,6 +4,8 @@
 #include "osal_i2c.h"
 #include <stdint.h>
 
+#define BMP280_I2C_ADDR 0x76
+
 // Calibration parameters structure
 typedef struct
 {
@@ -17,7 +19,7 @@ typedef struct
 {
     bmp280_calib_data calib;
     const i2c_osal_t *i2c_handler;
-};
+} bmp280_t;
 
 int bmp280_init(bmp280_t *self, const i2c_osal_t *i2c_handler);
 

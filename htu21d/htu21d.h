@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include "osal_i2c.h"
 
+#define HTU21D_I2C_ADDR 0x40
+
 typedef struct
 {
     bool is_valid;
