@@ -20,8 +20,7 @@
 
 int htu21d_init(htu21d_t *self, const i2c_osal_t *i2c_handler)
 {
-    if (!i2c_handler)
-    {
+    if (!i2c_handler) {
         return -1;
     }
 
@@ -36,33 +35,28 @@ static htu21d_measurement_t get_measurement_hold(htu21d_t *self, uint8_t command
     htu21d_measurement_t res;
     uint8_t data[3];
 
-    if (self == NULL || self->i2c_handler == NULL)
-    {
+    if (self == NULL || self->i2c_handler == NULL) {
         goto err_out;
     }
 
-    if (self->i2c_handler->write_read(self->i2c_handler->ctx, HTU21D_I2C_ADDR, &command, 1, data, 3) < 0)
-    {
+    if (self->i2c_handler->write_read(self->i2c_handler->ctx, HTU21D_I2C_ADDR, &command, 1, data,
+                                      3) < 0) {
         goto err_out;
     }
 
     uint8_t computed_crc = compute_crc8(data, 2);
 
-    if (computed_crc != data[2])
-    {
+    if (computed_crc != data[2]) {
         goto err_out;
     }
 
     uint16_t raw = (data[0] << 8) | (data[1] & MEASUREMENT_MASK);
 
-    if ((data[1] & MEASUREMENT_TYPE_MASK) == TEMPERATURE_MEASUREMENT)
-    {
+    if ((data[1] & MEASUREMENT_TYPE_MASK) == TEMPERATURE_MEASUREMENT) {
         // Temperature measurement
         res.is_valid = true;
         res.value = -46.85 + (175.72 * raw) / 65536.0;
-    }
-    else
-    {
+    } else {
         // Humidity measurement
         res.is_valid = true;
         res.value = -6.0 + (125.0 * raw) / 65536.0;
@@ -85,7 +79,8 @@ htu21d_measurement_t htu21d_read_humidity_hold(htu21d_t *self)
 }
 
 /****************** Non-hold master commands ******************/
-static htu21d_measurement_t get_measurement_no_hold(htu21d_t *self, uint8_t command, uint8_t meas_type)
+static htu21d_measurement_t get_measurement_no_hold(htu21d_t *self, uint8_t command,
+                                                    uint8_t meas_type)
 {
     htu21d_measurement_t res = {.is_valid = false, .value = 0};
     uint8_t data[3];
@@ -94,8 +89,7 @@ static htu21d_measurement_t get_measurement_no_hold(htu21d_t *self, uint8_t comm
         return res;
 
     /* trigger measurement */
-    if (self->i2c_handler->write(self->i2c_handler->ctx, HTU21D_I2C_ADDR, &command, 1) < 0)
-    {
+    if (self->i2c_handler->write(self->i2c_handler->ctx, HTU21D_I2C_ADDR, &command, 1) < 0) {
         return res;
     }
 
@@ -103,15 +97,13 @@ static htu21d_measurement_t get_measurement_no_hold(htu21d_t *self, uint8_t comm
     self->i2c_handler->delay_ms(self->i2c_handler->ctx, HTU21D_MEAS_DELAY_US / 1000);
 
     /* read measurement */
-    if (self->i2c_handler->read(self->i2c_handler->ctx, HTU21D_I2C_ADDR, data, 3) < 0)
-    {
+    if (self->i2c_handler->read(self->i2c_handler->ctx, HTU21D_I2C_ADDR, data, 3) < 0) {
         return res;
     }
 
     /* verify CRC */
     uint8_t computed_crc = compute_crc8(data, 2);
-    if (computed_crc != data[2])
-    {
+    if (computed_crc != data[2]) {
         return res;
     }
 

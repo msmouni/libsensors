@@ -1,20 +1,18 @@
 #ifndef LIBSENSORS_HTU21_D_H
 #define LIBSENSORS_HTU21_D_H
 
-#include <stdint.h>
-#include <stdbool.h>
 #include "osal_i2c.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 #define HTU21D_I2C_ADDR 0x40
 
-typedef struct
-{
+typedef struct {
     bool is_valid;
     float value;
 } htu21d_measurement_t;
 
-typedef struct
-{
+typedef struct {
     const i2c_osal_t *i2c_handler;
 } htu21d_t;
 

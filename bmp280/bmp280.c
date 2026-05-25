@@ -1,7 +1,7 @@
 #include "bmp280.h"
-#include <stdint.h>
-#include <stdbool.h>
 #include "stdlib.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 // BMP280 registers
 #define REG_CALIB 0x88
@@ -11,15 +11,15 @@
 #define REG_TEMP_MSB 0xF7
 
 // Function to read and parse BMP280 calibration data
-static int
-bmp280_read_calibration(const i2c_osal_t *i2c_handler, bmp280_calib_data *calib)
+static int bmp280_read_calibration(const i2c_osal_t *i2c_handler, bmp280_calib_data *calib)
 {
     if (i2c_handler == NULL || calib == NULL)
         return -1;
 
     uint8_t calib_reg = REG_CALIB;
     uint8_t calib_data[24];
-    if (i2c_handler->write_read(i2c_handler->ctx, BMP280_I2C_ADDR, &calib_reg, 1, calib_data, 24) < 0)
+    if (i2c_handler->write_read(i2c_handler->ctx, BMP280_I2C_ADDR, &calib_reg, 1, calib_data, 24) <
+        0)
         return -1;
 
     calib->dig_T1 = (calib_data[1] << 8) | calib_data[0];
@@ -48,8 +48,10 @@ int bmp280_init(bmp280_t *self, const i2c_osal_t *i2c_handler)
     if (bmp280_read_calibration(i2c_handler, &self->calib) < 0)
         return -1;
 
-    // Configure BMP280: Normal mode, temperature + pressure, oversampling x1, and standby time 0.5ms
-    uint8_t config[2] = {REG_CTRL_MEAS, 0x27}; // 0x27 = 00100111b (normal mode, temp+press oversampling x1)
+    // Configure BMP280: Normal mode, temperature + pressure, oversampling x1, and
+    // standby time 0.5ms
+    uint8_t config[2] = {REG_CTRL_MEAS,
+                         0x27}; // 0x27 = 00100111b (normal mode, temp+press oversampling x1)
     if (i2c_handler->write(i2c_handler->ctx, BMP280_I2C_ADDR, config, 2) < 0)
         return -1;
 
@@ -58,12 +60,11 @@ int bmp280_init(bmp280_t *self, const i2c_osal_t *i2c_handler)
     return 0;
 }
 
-// Function to calculate temperature and pressure using the calibration parameters
-int bmp280_get_measurement(bmp280_t *self,
-                           float *temperature, float *pressure)
+// Function to calculate temperature and pressure using the calibration
+// parameters
+int bmp280_get_measurement(bmp280_t *self, float *temperature, float *pressure)
 {
-    if (self == NULL || self->i2c_handler == NULL || temperature == NULL || pressure == NULL)
-    {
+    if (self == NULL || self->i2c_handler == NULL || temperature == NULL || pressure == NULL) {
         return -1;
     }
 
@@ -71,8 +72,8 @@ int bmp280_get_measurement(bmp280_t *self,
 
     // Read 6 bytes: 3 bytes for pressure and 3 bytes for temperature
     uint8_t press_reg = REG_PRESS_MSB;
-    if (self->i2c_handler->write_read(self->i2c_handler->ctx, BMP280_I2C_ADDR, &press_reg, 1, data, 6) != 0)
-    {
+    if (self->i2c_handler->write_read(self->i2c_handler->ctx, BMP280_I2C_ADDR, &press_reg, 1, data,
+                                      6) != 0) {
         *temperature = 0;
         *pressure = 0;
         return -1;
@@ -85,8 +86,12 @@ int bmp280_get_measurement(bmp280_t *self,
     // Temperature calculations (from BMP280 datasheet)
     int32_t var1, var2, t_fine;
 
-    var1 = ((((adc_T >> 3) - ((int32_t)self->calib.dig_T1 << 1))) * ((int32_t)self->calib.dig_T2)) >> 11;
-    var2 = (((((adc_T >> 4) - ((int32_t)self->calib.dig_T1)) * ((adc_T >> 4) - ((int32_t)self->calib.dig_T1))) >> 12) *
+    var1 =
+        ((((adc_T >> 3) - ((int32_t)self->calib.dig_T1 << 1))) * ((int32_t)self->calib.dig_T2)) >>
+        11;
+    var2 = (((((adc_T >> 4) - ((int32_t)self->calib.dig_T1)) *
+              ((adc_T >> 4) - ((int32_t)self->calib.dig_T1))) >>
+             12) *
             ((int32_t)self->calib.dig_T3)) >>
            14;
     t_fine = var1 + var2;
@@ -98,11 +103,12 @@ int bmp280_get_measurement(bmp280_t *self,
     var2 = (((var1 >> 2) * (var1 >> 2)) >> 11) * ((int32_t)self->calib.dig_P6);
     var2 = var2 + ((var1 * ((int32_t)self->calib.dig_P5)) << 1);
     var2 = (var2 >> 2) + (((int32_t)self->calib.dig_P4) << 16);
-    var1 = (((self->calib.dig_P3 * (((var1 >> 2) * (var1 >> 2)) >> 13)) >> 3) + ((((int32_t)self->calib.dig_P2) * var1) >> 1)) >> 18;
+    var1 = (((self->calib.dig_P3 * (((var1 >> 2) * (var1 >> 2)) >> 13)) >> 3) +
+            ((((int32_t)self->calib.dig_P2) * var1) >> 1)) >>
+           18;
     var1 = ((((32768 + var1)) * ((int32_t)self->calib.dig_P1)) >> 15);
 
-    if (var1 == 0)
-    {
+    if (var1 == 0) {
         *pressure = 0; // Avoid division by zero
         return 0;
     }
